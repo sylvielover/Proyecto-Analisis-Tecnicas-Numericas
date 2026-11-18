@@ -1,0 +1,33 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# --- Entornos virtuales ---
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# --- Empaquetado ---
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# --- Editores ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Salidas temporales de la interfaz (se regeneran con los botones) ---
+grafica_*.png
+resultados_TemaA.xlsx
+
+# --- Sistema operativo ---
+Thumbs.db
+desktop.ini
+.DS_Store
