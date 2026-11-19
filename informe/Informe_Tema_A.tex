@@ -87,9 +87,10 @@ exacto, se generan gráficas comparativas y de convergencia, y se determina el
 método más eficiente. Los resultados se obtienen con cálculos manuales, con
 hoja de cálculo (Excel) y con un \textbf{software de propósito general}
 desarrollado en Python (consola e interfaz gráfica). Se concluye que
-Gauss--Legendre y Romberg alcanzan la solución exacta (error de redondeo de
-máquina) para los integrandos polinomiales propuestos, mientras que el
-trapecio converge con orden $O(h^2)$.
+Gauss--Legendre y Romberg alcanzan la solución exacta para los integrandos
+polinomiales ($I_1$ e $I_2$), mientras que en la integral exponencial gaussiana
+($I_3=\pi\,\mathrm{erf}(1)^2\approx 2.230985$) Romberg resulta el más
+eficiente; el trapecio converge siempre con orden $O(h^2)$.
 
 % --------------------------- Introducción ------------------------------
 \section{Introducción}
@@ -194,62 +195,58 @@ numérica:
 \toprule
  & Integral & Región $R$ & Valor exacto \\
 \midrule
-1 & $\displaystyle\iint (1-x^2-y^2)\dd x\dd y$ & $[-1,1]\times[-1,1]$ & $4/3$ \\[4pt]
-2 & $\displaystyle\iint x^2 y^2\dd x\dd y$ & $[1,2]\times[1,3]$ & $182/9$ \\[4pt]
-3 & $\displaystyle\iint (x^2+y^2)\dd x\dd y$ & $[-1,1]\times[-1,1]$ & $8/3$ \\
+1 & $\displaystyle\iint (1-x^2)(1-y^2)\dd x\dd y$ & $[-1,1]\times[-1,1]$ & $16/9$ \\[4pt]
+2 & $\displaystyle\iint x^2 y^2\dd x\dd y$ & $[0,2]\times[0,3]$ & $24$ \\[4pt]
+3 & $\displaystyle\iint e^{-(x^2+y^2)}\dd x\dd y$ & $[-1,1]\times[-1,1]$ & $\pi\,\mathrm{erf}(1)^2\approx 2.230985$ \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\noindent\textit{Nota:} el enunciado también menciona un valor de referencia
-``exacto'' de $2.230985$ para un ejercicio de Gauss--Legendre; dicho valor no
-coincide con las tres integrales anteriores y debe verificarse visualmente en
-el PDF original.
+\noindent\textit{Nota:} el valor de referencia ``exacto'' $2.230985$ del
+enunciado corresponde a la \textbf{Integral 3} (la exponencial gaussiana),
+como se verifica en la solución analítica.
 
 % --------------------------- Solución analítica -------------------------
 \section{Solución analítica (cálculo manual)}
 
-\subsection{Integral 1: $\iint (1-x^2-y^2)\dd x\dd y$ sobre $[-1,1]^2$}
-Integrando primero respecto de $x$:
+\subsection{Integral 1: $\iint (1-x^2)(1-y^2)\dd x\dd y$ sobre $[-1,1]^2$}
+El integrando es separable: $(1-x^2)(1-y^2)=g(x)h(y)$. Por tanto
 \[
-  \int_{-1}^{1}(1-x^2-y^2)\dd x
-  =\Big[x-\tfrac{x^3}{3}-y^2x\Big]_{-1}^{1}
-  =\Big(\tfrac{2}{3}-y^2\Big)-\Big(-\tfrac{2}{3}+y^2\Big)
-  =\frac{4}{3}-2y^2 .
+  \int_{-1}^{1}\!\int_{-1}^{1}(1-x^2)(1-y^2)\dd x\dd y
+  =\Big(\int_{-1}^{1}(1-x^2)\dd x\Big)\Big(\int_{-1}^{1}(1-y^2)\dd y\Big).
 \]
-Integrando ahora respecto de $y$:
+Calculando una de las dos integrales (son idénticas):
 \[
-  \int_{-1}^{1}\Big(\frac{4}{3}-2y^2\Big)\dd y
-  =\Big[\frac{4y}{3}-\frac{2y^3}{3}\Big]_{-1}^{1}
+  \int_{-1}^{1}(1-x^2)\dd x
+  =\Big[x-\tfrac{x^3}{3}\Big]_{-1}^{1}
   =\frac{2}{3}-\Big(-\frac{2}{3}\Big)
-  =\frac{4}{3}\approx 1.3333333333 .
+  =\frac{4}{3}.
 \]
+Luego $I_1=\frac{4}{3}\cdot\frac{4}{3}=\frac{16}{9}\approx 1.7777777778$.
 
-\subsection{Integral 2: $\iint x^2 y^2\dd x\dd y$ sobre $[1,2]\times[1,3]$}
+\subsection{Integral 2: $\iint x^2 y^2\dd x\dd y$ sobre $[0,2]\times[0,3]$}
 Por ser separable (producto de funciones de una variable):
 \[
-  \int_{1}^{3}\!\int_{1}^{2}x^2y^2\dd x\dd y
-  =\Big(\int_{1}^{2}x^2\dd x\Big)\Big(\int_{1}^{3}y^2\dd y\Big)
-  =\Big[\frac{x^3}{3}\Big]_{1}^{2}\Big[\frac{y^3}{3}\Big]_{1}^{3}
-  =\frac{7}{3}\cdot\frac{26}{3}
-  =\frac{182}{9}\approx 20.2222222222 .
+  \int_{0}^{3}\!\int_{0}^{2}x^2y^2\dd x\dd y
+  =\Big(\int_{0}^{2}x^2\dd x\Big)\Big(\int_{0}^{3}y^2\dd y\Big)
+  =\Big[\frac{x^3}{3}\Big]_{0}^{2}\Big[\frac{y^3}{3}\Big]_{0}^{3}
+  =\frac{8}{3}\cdot 9 = 24 .
 \]
 
-\subsection{Integral 3: $\iint (x^2+y^2)\dd x\dd y$ sobre $[-1,1]^2$}
-Integrando primero respecto de $x$:
+\subsection{Integral 3: $\iint e^{-(x^2+y^2)}\dd x\dd y$ sobre $[-1,1]^2$}
+La exponencial también es separable: $e^{-(x^2+y^2)}=e^{-x^2}e^{-y^2}$. Entonces
 \[
-  \int_{-1}^{1}(x^2+y^2)\dd x
-  =\Big[\frac{x^3}{3}+y^2x\Big]_{-1}^{1}
-  =\Big(\frac{1}{3}+y^2\Big)-\Big(-\frac{1}{3}-y^2\Big)
-  =\frac{2}{3}+2y^2 .
+  I_3=\Big(\int_{-1}^{1}e^{-x^2}\dd x\Big)^{2}
+  =\Big(\sqrt{\pi}\,\mathrm{erf}(1)\Big)^{2}
+  =\pi\,\mathrm{erf}(1)^2 ,
 \]
-Integrando respecto de $y$:
+donde $\mathrm{erf}(1)\approx 0.8427008$ es la función error evaluada en 1.
+Numéricamente:
 \[
-  \int_{-1}^{1}\Big(\frac{2}{3}+2y^2\Big)\dd y
-  =\Big[\frac{2y}{3}+\frac{2y^3}{3}\Big]_{-1}^{1}
-  =\frac{4}{3}-\Big(-\frac{4}{3}\Big)
-  =\frac{8}{3}\approx 2.6666666667 .
+  I_3 = \pi\,(0.8427008)^2 \approx 2.2309851414 .
 \]
+Este es el valor de referencia ``exacto'' $2.230985$ que menciona el enunciado
+para el problema de cuadratura de Gauss--Legendre.
 % --------------------------- Solución numérica --------------------------
 \section{Solución numérica}
 Los cálculos se realizaron con el software de propósito general desarrollado en
@@ -259,109 +256,118 @@ $n=100$ subintervalos para trapecio y Simpson 1/3, $n=99$ para Simpson 3/8
 (múltiplo de 3), $m=8$ niveles para Romberg y $n=2,3,5$ puntos para
 Gauss--Legendre. Los resultados se muestran a continuación.
 
-\subsection{Integral 1: $I_1=4/3\approx 1.3333333333$}
+\subsection{Integral 1: $I_1=16/9\approx 1.7777777778$}
 \begin{center}
 \begin{tabular}{l c c c}
 \toprule
 Método & Resultado & Error absoluto & Error relativo \\
 \midrule
-Trapecio ($n=100$)       & $1.3328000000$ & $5.333\times10^{-4}$ & $4.000\times10^{-4}$ \\
-Simpson 1/3 ($n=100$)    & $1.3333333333$ & $2.220\times10^{-16}$ & $1.665\times10^{-16}$ \\
-Simpson 3/8 ($n=99$)     & $1.3333333333$ & $4.441\times10^{-16}$ & $3.331\times10^{-16}$ \\
-Romberg ($m=8$)          & $1.3333333333$ & $1.110\times10^{-15}$ & $8.327\times10^{-16}$ \\
-Gauss--Legendre (2 ptos) & $1.3333333333$ & $4.441\times10^{-16}$ & $3.331\times10^{-16}$ \\
-Gauss--Legendre (3 ptos) & $1.3333333333$ & $0$ & $0$ \\
-Gauss--Legendre (5 ptos) & $1.3333333333$ & $1.110\times10^{-15}$ & $8.327\times10^{-16}$ \\
+Trapecio ($n=100$)       & $1.7774222400$ & $3.555\times10^{-4}$ & $2.000\times10^{-4}$ \\
+Simpson 1/3 ($n=100$)    & $1.7777777778$ & $4.441\times10^{-16}$ & $2.498\times10^{-16}$ \\
+Simpson 3/8 ($n=99$)     & $1.7777777778$ & $6.661\times10^{-16}$ & $3.747\times10^{-16}$ \\
+Romberg ($m=8$)          & $1.7777777778$ & $6.661\times10^{-16}$ & $3.747\times10^{-16}$ \\
+Gauss--Legendre (2 ptos) & $1.7777777778$ & $4.441\times10^{-16}$ & $2.498\times10^{-16}$ \\
+Gauss--Legendre (3 ptos) & $1.7777777778$ & $2.220\times10^{-16}$ & $1.249\times10^{-16}$ \\
+Gauss--Legendre (5 ptos) & $1.7777777778$ & $6.661\times10^{-16}$ & $3.747\times10^{-16}$ \\
 \bottomrule
 \end{tabular}
 \end{center}
-\textbf{Método más eficiente:} Gauss--Legendre (3 puntos), error $=0$.
+\textbf{Método más eficiente:} Gauss--Legendre (3 puntos).
 
-\subsection{Integral 2: $I_2=182/9\approx 20.2222222222$}
+\subsection{Integral 2: $I_2=24$}
 \begin{center}
 \begin{tabular}{l c c c}
 \toprule
 Método & Resultado & Error absoluto & Error relativo \\
 \midrule
-Trapecio ($n=100$)       & $20.2226777800$ & $4.556\times10^{-4}$ & $2.253\times10^{-5}$ \\
-Simpson 1/3 ($n=100$)    & $20.2222222222$ & $3.553\times10^{-15}$ & $1.757\times10^{-16}$ \\
-Simpson 3/8 ($n=99$)     & $20.2222222222$ & $1.066\times10^{-14}$ & $5.271\times10^{-16}$ \\
-Romberg ($m=8$)          & $20.2222222222$ & $0$ & $0$ \\
-Gauss--Legendre (2 ptos) & $20.2222222222$ & $0$ & $0$ \\
-Gauss--Legendre (3 ptos) & $20.2222222222$ & $3.553\times10^{-15}$ & $1.757\times10^{-16}$ \\
-Gauss--Legendre (5 ptos) & $20.2222222222$ & $0$ & $0$ \\
+Trapecio ($n=100$)       & $24.0024000600$ & $2.400\times10^{-3}$ & $1.000\times10^{-4}$ \\
+Simpson 1/3 ($n=100$)    & $24.0000000000$ & $0$ & $0$ \\
+Simpson 3/8 ($n=99$)     & $24.0000000000$ & $1.066\times10^{-14}$ & $4.441\times10^{-16}$ \\
+Romberg ($m=8$)          & $24.0000000000$ & $0$ & $0$ \\
+Gauss--Legendre (2 ptos) & $24.0000000000$ & $7.105\times10^{-15}$ & $2.961\times10^{-16}$ \\
+Gauss--Legendre (3 ptos) & $24.0000000000$ & $7.105\times10^{-15}$ & $2.961\times10^{-16}$ \\
+Gauss--Legendre (5 ptos) & $24.0000000000$ & $0$ & $0$ \\
 \bottomrule
 \end{tabular}
 \end{center}
-\textbf{Método más eficiente:} Romberg ($m=8$), error $=0$ (junto con
-Gauss--Legendre de 2 y 5 puntos, que también dan error $0$).
+\textbf{Método más eficiente:} Simpson 1/3 y Romberg (error $=0$).
 
-\subsection{Integral 3: $I_3=8/3\approx 2.6666666667$}
+\subsection{Integral 3: $I_3=\pi\,\mathrm{erf}(1)^2\approx 2.2309851414$}
 \begin{center}
 \begin{tabular}{l c c c}
 \toprule
 Método & Resultado & Error absoluto & Error relativo \\
 \midrule
-Trapecio ($n=100$)       & $2.6672000000$ & $5.333\times10^{-4}$ & $2.000\times10^{-4}$ \\
-Simpson 1/3 ($n=100$)    & $2.6666666667$ & $8.882\times10^{-16}$ & $3.331\times10^{-16}$ \\
-Simpson 3/8 ($n=99$)     & $2.6666666667$ & $8.882\times10^{-16}$ & $3.331\times10^{-16}$ \\
-Romberg ($m=8$)          & $2.6666666667$ & $0$ & $0$ \\
-Gauss--Legendre (2 ptos) & $2.6666666667$ & $0$ & $0$ \\
-Gauss--Legendre (3 ptos) & $2.6666666667$ & $1.332\times10^{-15}$ & $4.996\times10^{-16}$ \\
-Gauss--Legendre (5 ptos) & $2.6666666667$ & $4.441\times10^{-16}$ & $1.665\times10^{-16}$ \\
+Trapecio ($n=100$)       & $2.2308386132$ & $1.465\times10^{-4}$ & $6.568\times10^{-5}$ \\
+Simpson 1/3 ($n=100$)    & $2.2309851492$ & $7.814\times10^{-9}$ & $3.503\times10^{-9}$ \\
+Simpson 3/8 ($n=99$)     & $2.2309851597$ & $1.830\times10^{-8}$ & $8.203\times10^{-9}$ \\
+Romberg ($m=8$)          & $2.2309851414$ & $8.882\times10^{-16}$ & $3.981\times10^{-16}$ \\
+Gauss--Legendre (2 ptos) & $2.0536684761$ & $1.773\times10^{-1}$ & $7.948\times10^{-2}$ \\
+Gauss--Legendre (3 ptos) & $2.2460405304$ & $1.506\times10^{-2}$ & $6.748\times10^{-3}$ \\
+Gauss--Legendre (5 ptos) & $2.2310319080$ & $4.677\times10^{-5}$ & $2.096\times10^{-5}$ \\
 \bottomrule
 \end{tabular}
 \end{center}
-\textbf{Método más eficiente:} Romberg ($m=8$), error $=0$ (junto con
-Gauss--Legendre de 2 puntos, que también da error $0$).
+\textbf{Método más eficiente:} Romberg ($m=8$), error $\approx 8.9\times10^{-16}$.
 % ---------------------- Comparación de eficiencia ----------------------
 \section{Comparación de eficiencia}
 La eficiencia se evalúa con el \textbf{error absoluto} $|I_{\text{num}}-I_{\text{exacto}}|$
-frente al número de evaluaciones del integrando. De las tablas anteriores se
-observa:
+frente al número de evaluaciones del integrando.
 
-\begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Trapecio} es el método menos preciso: su error es del orden de
-        $5\times10^{-4}$ con $n=100$ y converge con orden $O(h^2)$.
-  \item \textbf{Simpson 1/3 y 3/8} alcanzan la precisión de máquina
-        ($\sim10^{-15}$) porque los integrandos son polinomios de grado bajo y
-        ambos métodos son exactos para grado $\le 3$.
-  \item \textbf{Romberg} y \textbf{Gauss--Legendre} llegan al valor exacto con
-        error $0$ o del orden de la unidad de redondeo ($\sim10^{-16}$),
-        confirmando que son los métodos más eficientes para estos integrandos.
-\end{itemize}
+\subsection{Integrales 1 y 2 (integrandos polinomiales)}
+En $I_1$ e $I_2$ los integrandos son polinomios de grado bajo, por lo que
+Simpson 1/3, Simpson 3/8, Romberg y Gauss--Legendre reproducen el valor exacto
+con errores del orden de la precisión de máquina ($10^{-15}$--$10^{-16}$). El
+trapecio es el único con error apreciable ($3.6\times10^{-4}$ y
+$2.4\times10^{-3}$), porque converge solo con orden $O(h^2)$.
 
-\subsection{Convergencia del trapecio y orden de exactitud}
-La siguiente tabla muestra el error absoluto del trapecio al aumentar el número
-de subintervalos $n$ en cada dirección:
+\subsection{Integral 3 (exponencial gaussiana)}
+En $I_3$ el integrando $e^{-(x^2+y^2)}$ no es polinomial y se aprecia el
+comportamiento real de cada método. La siguiente tabla muestra el error
+absoluto de Trapecio y Simpson 1/3 al aumentar $n$:
 
 \begin{center}
-\begin{tabular}{c c c c}
+\begin{tabular}{c c c}
 \toprule
-$n$ & Error ($I_1$) & Error ($I_2$) & Error ($I_3$) \\
+$n$ & Error (Trapecio) & Error (Simpson 1/3) \\
 \midrule
-4   & $3.333\times10^{-1}$ & $2.856\times10^{-1}$ & $3.333\times10^{-1}$ \\
-8   & $8.333\times10^{-2}$ & $7.123\times10^{-2}$ & $8.333\times10^{-2}$ \\
-16  & $2.083\times10^{-2}$ & $1.780\times10^{-2}$ & $2.083\times10^{-2}$ \\
-32  & $5.208\times10^{-3}$ & $4.449\times10^{-3}$ & $5.208\times10^{-3}$ \\
-64  & $1.302\times10^{-3}$ & $1.112\times10^{-3}$ & $1.302\times10^{-3}$ \\
-128 & $3.255\times10^{-4}$ & $2.780\times10^{-4}$ & $3.255\times10^{-4}$ \\
+4   & $9.138\times10^{-2}$ & $2.129\times10^{-3}$ \\
+8   & $2.288\times10^{-2}$ & $1.867\times10^{-4}$ \\
+16  & $5.723\times10^{-3}$ & $1.188\times10^{-5}$ \\
+32  & $1.431\times10^{-3}$ & $7.446\times10^{-7}$ \\
+64  & $3.577\times10^{-4}$ & $4.657\times10^{-8}$ \\
+128 & $8.943\times10^{-5}$ & $2.911\times10^{-9}$ \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-Al duplicar $n$, el error se reduce a la cuarta parte (factor $\approx 4$), lo
-que confirma un orden de convergencia $p=2$. Ajustando $\log_{10}E$ contra
-$\log_{10}n$ mediante mínimos cuadrados se obtiene:
-\[
-  \text{pendiente } = -p = -2.001,\qquad R^2 = 1.0000 .
-\]
-El coeficiente de determinación $R^2\approx 1$ indica que los datos siguen
-perfectamente la ley $E\propto n^{-2}$.
+El error de Gauss--Legendre en $I_3$ según el número de puntos:
 
-Para Simpson y Gauss--Legendre el error ya está en el nivel de la precisión de
-máquina ($\sim10^{-15}$) desde $n$ pequeño, por lo que no existe una tendencia
-polinomial que ajustar (el método ya es ``exacto'' a efectos prácticos).
+\begin{center}
+\begin{tabular}{c c}
+\toprule
+Puntos & Error absoluto \\
+\midrule
+2 & $1.773\times10^{-1}$ \\
+3 & $1.506\times10^{-2}$ \\
+4 & $9.368\times10^{-4}$ \\
+5 & $4.677\times10^{-5}$ \\
+6 & $1.946\times10^{-6}$ \\
+7 & $6.944\times10^{-8}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+El ajuste log--log (mínimos cuadrados) del error frente a $n$ confirma los
+órdenes de convergencia teóricos:
+\[
+  \text{Trapecio: } p=2.00\ (R^2=1.0000),\qquad
+  \text{Simpson 1/3: } p=3.92\ (R^2=0.9996).
+\]
+El coeficiente de determinación $R^2\approx1$ indica que los datos siguen
+fielmente las leyes $E\propto n^{-2}$ y $E\propto n^{-4}$. Romberg ($m=8$)
+alcanza $8.9\times10^{-16}$ (precisión de máquina), por lo que es el método
+más eficiente para esta integral.
 
 % ------------------------------- Gráficas -------------------------------
 \section{Gráficas generadas}
@@ -369,11 +375,11 @@ Las gráficas fueron generadas automáticamente por el software
 (\texttt{graficas.py}) y guardadas en formato PNG.
 
 \fig{0.85}{barras_integral_1.png}{Error absoluto por método para la integral 1
-($1-x^2-y^2$).}{fig:barras1}
+($(1-x^2)(1-y^2)$).}{fig:barras1}
 \fig{0.85}{barras_integral_2.png}{Error absoluto por método para la integral 2
 ($x^2y^2$).}{fig:barras2}
 \fig{0.85}{barras_integral_3.png}{Error absoluto por método para la integral 3
-($x^2+y^2$).}{fig:barras3}
+($e^{-(x^2+y^2)}$).}{fig:barras3}
 \fig{0.85}{convergencia_integral_1.png}{Convergencia (error vs.\ $n$) para la
 integral 1.}{fig:conv1}
 \fig{0.85}{convergencia_integral_2.png}{Convergencia (error vs.\ $n$) para la
@@ -390,20 +396,25 @@ Se elaboró una hoja de cálculo (\texttt{Tema\_A\_Excel.xlsx}) con cuatro hojas
 \emph{Metodología}) que reproduce los cálculos anteriores mediante
 \textbf{fórmulas en vivo}, de modo que al abrirla los valores se recalculan y
 pueden verificarse. Las fórmulas implementan las mismas sumas ponderadas del
-marco teórico (trapecio, Simpson y Gauss--Legendre con nodos y pesos tabulados).
+marco teórico (trapecio, Simpson y Gauss--Legendre con nodos y pesos
+tabulados), e incluyen tablas demostrativas paso a paso sobre la función
+$\int e^{-x^2}\dd x$.
 
 % ----------------------------- Conclusiones -----------------------------
 \section{Conclusiones}
 \begin{itemize}[leftmargin=1.4em]
-  \item Todas las integrales pudieron resolverse analíticamente por integración
-        iterada, obteniendo $I_1=4/3$, $I_2=182/9$ e $I_3=8/3$.
-  \item Los métodos de orden superior (Simpson, Romberg y Gauss--Legendre)
-        reproducen el valor exacto con errores del orden de la precisión de
-        máquina ($10^{-15}$--$10^{-16}$), por lo que son los más eficientes.
-  \item El trapecio converge con orden $O(h^2)$, confirmado por el ajuste
-        log--log ($p\approx2$, $R^2=1$), siendo el método menos eficiente.
+  \item Las tres integrales se resolvieron analíticamente por integración
+        iterada (separación de variables): $I_1=16/9$, $I_2=24$ e
+        $I_3=\pi\,\mathrm{erf}(1)^2\approx 2.230985$.
+  \item En los integrandos polinomiales ($I_1$ e $I_2$), Simpson, Romberg y
+        Gauss--Legendre son exactos a precisión de máquina con muy pocos puntos.
+  \item En la exponencial gaussiana ($I_3$), Gauss--Legendre converge muy rápido
+        al aumentar los puntos, pero Romberg ($m=8$) es el más eficiente, con
+        error del orden de $10^{-16}$.
+  \item El trapecio converge con orden $O(h^2)$ ($R^2=1$) y Simpson 1/3 con
+        $O(h^4)$ ($R^2\approx0.9996$), confirmado por el ajuste log--log.
   \item Gauss--Legendre con $n$ puntos integra exactamente polinomios de grado
-        $\le 2n-1$: por eso con 2--3 puntos basta para estos integrandos.
+        $\le 2n-1$, lo que explica su exactitud en $I_1$ e $I_2$.
 \end{itemize}
 
 % --------------------------- Recomendaciones ----------------------------
@@ -411,10 +422,10 @@ marco teórico (trapecio, Simpson y Gauss--Legendre con nodos y pesos tabulados)
 \begin{itemize}[leftmargin=1.4em]
   \item Para integrandos suaves y polinomiales, usar Gauss--Legendre o Romberg,
         que requieren pocas evaluaciones y alcanzan alta exactitud.
+  \item Para integrandos no polinomiales (como $e^{-(x^2+y^2)}$), preferir
+        Romberg con varios niveles, que converge a precisión de máquina.
   \item Evitar el trapecio cuando se necesite alta precisión; en su lugar,
-        emplear Simpson (compuesta) o extrapolación de Romberg.
-  \item Verificar visualmente los límites de integración en el enunciado
-        original y, de ser necesario, actualizar el valor exacto en el código.
+        emplear Simpson compuesta o extrapolación de Romberg.
 \end{itemize}
 
 % ---------------------------- Referencias -------------------------------

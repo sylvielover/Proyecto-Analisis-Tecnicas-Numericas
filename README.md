@@ -12,9 +12,9 @@ método** con base en su **error absoluto** y **relativo**.
 
 | # | Integral | Límites | Valor exacto | Método más eficiente |
 |---|----------|---------|--------------|----------------------|
-| 1 | ∬ (1 − x² − y²) dx dy | −1 ≤ x ≤ 1, −1 ≤ y ≤ 1 | **4/3** | Gauss-Legendre (3 puntos) — error 0 |
-| 2 | ∬ x² y² dx dy | 1 ≤ x ≤ 2, 1 ≤ y ≤ 3 | **182/9** | Romberg — error 0 |
-| 3 | ∬ (x² + y²) dx dy | −1 ≤ x ≤ 1, −1 ≤ y ≤ 1 | **8/3** | Romberg — error 0 |
+| 1 | ∬ (1 − x²)(1 − y²) dx dy | −1 ≤ x ≤ 1, −1 ≤ y ≤ 1 | **16/9** | Gauss-Legendre (3 ptos) |
+| 2 | ∬ x² y² dx dy | 0 ≤ x ≤ 2, 0 ≤ y ≤ 3 | **24** | Simpson 1/3 / Romberg |
+| 3 | ∬ e^(−(x²+y²)) dx dy | −1 ≤ x ≤ 1, −1 ≤ y ≤ 1 | **π·erf(1)² ≈ 2.230985** | Romberg (m=8) |
 
 Incluye **cálculo manual**, **Excel** (con fórmulas vivas) y **software de
 propósito general** (consola + interfaz gráfica + integral personalizada).
@@ -92,9 +92,7 @@ Documentación ampliada: [`tema_a/README.md`](tema_a/README.md).
 - **Docente:** Ing. Carlos Cohen M.
 - **Autor:** Keiner Elías Beltrán Vergara
 
-## ⚠️ Nota
+## ✅ Nota sobre el valor 2.230985
 
-Los límites de integración fueron interpretados de la imagen del enunciado.
-El PDF menciona un valor de referencia de **2.230985** para el ejercicio de
-Gauss-Legendre; si tus límites difieren, basta actualizar `exacto` en
-`tema_a/integrales.py`.
+El valor de referencia "exacto" **2.230985** del enunciado corresponde a la
+**Integral 3**: ∬ e^(−(x²+y²)) dx dy = (√π·erf(1))² = π·erf(1)² ≈ 2.230985.

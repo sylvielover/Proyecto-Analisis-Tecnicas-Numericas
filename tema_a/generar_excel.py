@@ -20,6 +20,10 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
+import math
+
+import numpy as np
+
 from metodos import trapecio, simpson13, simpson38, romberg, gauss_legendre
 
 
@@ -38,13 +42,14 @@ METODOS = [
     ("Gauss-Legendre (5 ptos)", gauss_legendre, 5),
 ]
 
-# Integrales 1D necesarias (todas son de x² o y²)
+# Integrales 1D necesarias (los tres integrandos son separables: f(x)·g(y))
 # (nombre, función, a, b, valor exacto)
 INTEGRALES_1D = [
-    ("∫ x² dx  sobre [-1, 1]", lambda x: x ** 2, -1.0, 1.0, 2.0 / 3.0),
-    ("∫ x² dx  sobre [1, 2]", lambda x: x ** 2, 1.0, 2.0, 7.0 / 3.0),
-    ("∫ y² dy  sobre [-1, 1]", lambda y: y ** 2, -1.0, 1.0, 2.0 / 3.0),
-    ("∫ y² dy  sobre [1, 3]", lambda y: y ** 2, 1.0, 3.0, 26.0 / 3.0),
+    ("∫ (1−x²) dx  sobre [-1, 1]", lambda x: 1.0 - x ** 2, -1.0, 1.0, 4.0 / 3.0),
+    ("∫ x² dx  sobre [0, 2]", lambda x: x ** 2, 0.0, 2.0, 8.0 / 3.0),
+    ("∫ y² dy  sobre [0, 3]", lambda y: y ** 2, 0.0, 3.0, 9.0),
+    ("∫ e^(−x²) dx  sobre [-1, 1]", lambda x: np.exp(-(x ** 2)), -1.0, 1.0,
+     math.sqrt(math.pi) * math.erf(1.0)),
 ]
 
 # Resultados 1D por método: resultados[método_idx][integral_1D_idx] = valor
@@ -56,29 +61,27 @@ for nombre, metodo, n in METODOS:
     RESULTADOS_1D.append(fila)
 
 # Índices de las cuatro integrales 1D
-I_X2_A = 0   # ∫ x² sobre [-1,1]
-I_X2_B = 1   # ∫ x² sobre [1,2]
-I_Y2_A = 2   # ∫ y² sobre [-1,1]
-I_Y2_B = 3   # ∫ y² sobre [1,3]
+I_1MX2 = 0   # ∫ (1−x²) sobre [-1,1]  -> I1
+I_X2_B = 1   # ∫ x² sobre [0,2]        -> I2
+I_Y2_B = 2   # ∫ y² sobre [0,3]        -> I2
+I_EXPX = 3   # ∫ e^(−x²) sobre [-1,1]  -> I3
 
-# Combinación 2D -> integrales dobles del Tema A
-#   I1 = (xb-xa)(yb-ya) − (yb-ya)·∫x²_A − (xb-xa)·∫y²_A
-#   I2 = ∫x²_B · ∫y²_B
-#   I3 = (yb-ya)·∫x²_A + (xb-xa)·∫y²_A
+# Combinación 2D -> integrales dobles del Tema A (todas separables)
+#   I1 = ∫(1−x²) · ∫(1−y²)
+#   I2 = ∫x² · ∫y²
+#   I3 = ∫e^(−x²) · ∫e^(−y²)
 def combinar(r):
-    Lx_A, Ly_A = 2.0, 2.0            # (xb-xa) y (yb-ya) para las regiones [-1,1]
-    Lx_B, Ly_B = 1.0, 2.0            # [1,2] y [1,3]
-    i1 = Lx_A * Ly_A - Ly_A * r[I_X2_A] - Lx_A * r[I_Y2_A]
+    i1 = r[I_1MX2] * r[I_1MX2]   # (1−x²) y (1−y²) son la misma integral
     i2 = r[I_X2_B] * r[I_Y2_B]
-    i3 = Ly_A * r[I_X2_A] + Lx_A * r[I_Y2_A]
+    i3 = r[I_EXPX] * r[I_EXPX]   # e^(−x²) y e^(−y²) son la misma integral
     return i1, i2, i3
 
-EXACTOS = (4.0 / 3.0, 182.0 / 9.0, 8.0 / 3.0)
+EXACTOS = (16.0 / 9.0, 24.0, math.pi * math.erf(1.0) ** 2)
 RESULTADOS_2D = [combinar(r) for r in RESULTADOS_1D]
 
-NOMBRES_INTEGRALES = ["Integral 1: ∬ (1 − x² − y²) dx dy",
+NOMBRES_INTEGRALES = ["Integral 1: ∬ (1 − x²)(1 − y²) dx dy",
                       "Integral 2: ∬ x² y² dx dy",
-                      "Integral 3: ∬ (x² + y²) dx dy"]
+                      "Integral 3: ∬ e^(−(x² + y²)) dx dy"]
 
 
 # ---------------------------------------------------------------------------
@@ -136,9 +139,9 @@ def hoja_resumen(wb):
         poner(ws, f"{get_column_letter(j+1)}{r}", h, ENCABEZADO, RELLENO_ENC)
     r += 1
     datos = [
-        ("∬ (1 − x² − y²) dx dy", "[-1, 1]", "[-1, 1]", 4 / 3),
-        ("∬ x² y² dx dy", "[1, 2]", "[1, 3]", 182 / 9),
-        ("∬ (x² + y²) dx dy", "[-1, 1]", "[-1, 1]", 8 / 3),
+        ("∬ (1 − x²)(1 − y²) dx dy", "[-1, 1]", "[-1, 1]", 16 / 9),
+        ("∬ x² y² dx dy", "[0, 2]", "[0, 3]", 24),
+        ("∬ e^(−(x² + y²)) dx dy", "[-1, 1]", "[-1, 1]", math.pi * math.erf(1.0) ** 2),
     ]
     for d in datos:
         poner(ws, f"A{r}", d[0], TEXTO)
@@ -193,7 +196,7 @@ def hoja_metodos_1d(wb):
     ws = wb.create_sheet("Metodos_1D")
     ancho_columnas(ws, [46, 14, 14, 12, 14])
 
-    poner(ws, "A1", "MÉTODOS 1D APLICADOS A ∫x² dx  y  ∫y² dy", TITULO, RELLENO_TITULO)
+    poner(ws, "A1", "MÉTODOS 1D APLICADOS A LAS INTEGRALES DEL TEMA A", TITULO, RELLENO_TITULO)
     poner(ws, "A2", "Los integrandos son separables; la integral doble se reduce a estas integrales 1D.", SUBTITULO)
     ws.merge_cells("A1:E1")
     ws.merge_cells("A2:E2")
@@ -213,11 +216,11 @@ def hoja_metodos_1d(wb):
 
     # --- Tabla demostrativa Trapecio (n=8) ---
     r += 1
-    poner(ws, f"A{r}", "DEMOSTRACIÓN — Trapecio compuesto (n=8) sobre ∫ x² dx en [-1, 1]", ENCABEZADO, RELLENO_ENC)
+    poner(ws, f"A{r}", "DEMOSTRACIÓN — Trapecio compuesto (n=8) sobre ∫ e^(−x²) dx en [-1, 1]", ENCABEZADO, RELLENO_ENC)
     r += 1
     poner(ws, f"A{r}", "i", ENCABEZADO, RELLENO_ENC)
     poner(ws, f"B{r}", "x_i", ENCABEZADO, RELLENO_ENC)
-    poner(ws, f"C{r}", "f(x_i) = x_i²", ENCABEZADO, RELLENO_ENC)
+    poner(ws, f"C{r}", "f(x_i) = e^(−x_i²)", ENCABEZADO, RELLENO_ENC)
     r += 1
     n_trap = 8
     h_trap = 2.0 / n_trap
@@ -226,7 +229,7 @@ def hoja_metodos_1d(wb):
         xi = -1.0 + i * h_trap
         poner(ws, f"A{r}", i, TEXTO)
         poner(ws, f"B{r}", xi, TEXTO, formato="0.00")
-        poner(ws, f"C{r}", f"=B{r}^2", TEXTO, formato="0.0000")
+        poner(ws, f"C{r}", f"=EXP(-(B{r}^2))", TEXTO, formato="0.0000")
         r += 1
     fin = r - 1
     poner(ws, f"A{r}", "Trapecio =", NEGRITA)
@@ -236,9 +239,9 @@ def hoja_metodos_1d(wb):
     r += 2
 
     # --- Tabla demostrativa Simpson 1/3 (n=8) ---
-    poner(ws, f"A{r}", "DEMOSTRACIÓN — Simpson 1/3 compuesta (n=8) sobre ∫ x² dx en [-1, 1]", ENCABEZADO, RELLENO_ENC)
+    poner(ws, f"A{r}", "DEMOSTRACIÓN — Simpson 1/3 compuesta (n=8) sobre ∫ e^(−x²) dx en [-1, 1]", ENCABEZADO, RELLENO_ENC)
     r += 1
-    for j, h in enumerate(["i", "x_i", "f(x_i) = x_i²", "peso w_i", "w_i·f(x_i)"]):
+    for j, h in enumerate(["i", "x_i", "f(x_i) = e^(−x_i²)", "peso w_i", "w_i·f(x_i)"]):
         poner(ws, f"{get_column_letter(j+1)}{r}", h, ENCABEZADO, RELLENO_ENC)
     r += 1
     n_s13 = 8
@@ -249,7 +252,7 @@ def hoja_metodos_1d(wb):
         w = 1.0 if (i == 0 or i == n_s13) else (4.0 if i % 2 == 1 else 2.0)
         poner(ws, f"A{r}", i, TEXTO)
         poner(ws, f"B{r}", xi, TEXTO, formato="0.00")
-        poner(ws, f"C{r}", f"=B{r}^2", TEXTO, formato="0.0000")
+        poner(ws, f"C{r}", f"=EXP(-(B{r}^2))", TEXTO, formato="0.0000")
         poner(ws, f"D{r}", w, TEXTO)
         poner(ws, f"E{r}", f"=C{r}*D{r}", TEXTO, formato="0.0000")
         r += 1
@@ -260,9 +263,9 @@ def hoja_metodos_1d(wb):
     r += 2
 
     # --- Tabla demostrativa Simpson 3/8 (n=9) ---
-    poner(ws, f"A{r}", "DEMOSTRACIÓN — Simpson 3/8 compuesta (n=9) sobre ∫ x² dx en [-1, 1]", ENCABEZADO, RELLENO_ENC)
+    poner(ws, f"A{r}", "DEMOSTRACIÓN — Simpson 3/8 compuesta (n=9) sobre ∫ e^(−x²) dx en [-1, 1]", ENCABEZADO, RELLENO_ENC)
     r += 1
-    for j, h in enumerate(["i", "x_i", "f(x_i) = x_i²", "peso w_i", "w_i·f(x_i)"]):
+    for j, h in enumerate(["i", "x_i", "f(x_i) = e^(−x_i²)", "peso w_i", "w_i·f(x_i)"]):
         poner(ws, f"{get_column_letter(j+1)}{r}", h, ENCABEZADO, RELLENO_ENC)
     r += 1
     n_s38 = 9
@@ -273,7 +276,7 @@ def hoja_metodos_1d(wb):
         w = 1.0 if (i == 0 or i == n_s38) else (2.0 if i % 3 == 0 else 3.0)
         poner(ws, f"A{r}", i, TEXTO)
         poner(ws, f"B{r}", xi, TEXTO, formato="0.0000")
-        poner(ws, f"C{r}", f"=B{r}^2", TEXTO, formato="0.0000")
+        poner(ws, f"C{r}", f"=EXP(-(B{r}^2))", TEXTO, formato="0.0000")
         poner(ws, f"D{r}", w, TEXTO)
         poner(ws, f"E{r}", f"=C{r}*D{r}", TEXTO, formato="0.0000")
         r += 1
@@ -343,10 +346,10 @@ def hoja_gauss_romberg(wb):
             r += 1
         r += 1
 
-    # --- Demostración en vivo: Gauss n=2 sobre ∫ x² dx en [-1,1] ---
-    poner(ws, f"A{r}", "DEMOSTRACIÓN — Gauss-Legendre (n=2) sobre ∫ x² dx en [-1, 1]", ENCABEZADO, RELLENO_ENC)
+    # --- Demostración en vivo: Gauss n=2 sobre ∫ e^(−x²) dx en [-1,1] ---
+    poner(ws, f"A{r}", "DEMOSTRACIÓN — Gauss-Legendre (n=2) sobre ∫ e^(−x²) dx en [-1, 1]", ENCABEZADO, RELLENO_ENC)
     r += 1
-    for j, h in enumerate(["xᵢ (nodo en [-1,1])", "tᵢ (mapeado a [a,b])", "f(tᵢ) = tᵢ²", "wᵢ", "wᵢ·f(tᵢ)"]):
+    for j, h in enumerate(["xᵢ (nodo en [-1,1])", "tᵢ (mapeado a [a,b])", "f(tᵢ) = e^(−tᵢ²)", "wᵢ", "wᵢ·f(tᵢ)"]):
         poner(ws, f"{get_column_letter(j+1)}{r}", h, ENCABEZADO, RELLENO_ENC)
     r += 1
     x2, w2 = leggauss(2)
@@ -356,7 +359,7 @@ def hoja_gauss_romberg(wb):
         ti = 0.5 * (b - a) * xi + 0.5 * (a + b)
         poner(ws, f"A{r}", xi, TEXTO, formato="0.0000000000")
         poner(ws, f"B{r}", ti, TEXTO, formato="0.0000000000")
-        poner(ws, f"C{r}", f"=B{r}^2", TEXTO, formato="0.0000000000")
+        poner(ws, f"C{r}", f"=EXP(-(B{r}^2))", TEXTO, formato="0.0000000000")
         poner(ws, f"D{r}", wi, TEXTO, formato="0.0000000000")
         poner(ws, f"E{r}", f"=C{r}*D{r}", TEXTO, formato="0.0000000000")
         r += 1
@@ -366,14 +369,14 @@ def hoja_gauss_romberg(wb):
     poner(ws, f"D{r}", "(= (b−a)/2 · Σ wᵢf(tᵢ))", TEXTO)
     r += 2
 
-    # --- Tabla de Romberg (valores) para ∫ x² dx en [-1,1] ---
-    poner(ws, f"A{r}", "TABLA DE ROMBERG — ∫ x² dx en [-1, 1]  (m = 8 niveles)", ENCABEZADO, RELLENO_ENC)
+    # --- Tabla de Romberg (valores) para ∫ e^(−x²) dx en [-1,1] ---
+    poner(ws, f"A{r}", "TABLA DE ROMBERG — ∫ e^(−x²) dx en [-1, 1]  (m = 8 niveles)", ENCABEZADO, RELLENO_ENC)
     r += 1
     poner(ws, f"A{r}", "Nivel (trapecios)", ENCABEZADO, RELLENO_ENC)
     for j in range(8):
         poner(ws, f"{get_column_letter(j+2)}{r}", f"Extrap. {j}", ENCABEZADO, RELLENO_ENC)
     r += 1
-    R = _tabla_romberg(lambda x: x ** 2, -1.0, 1.0, 8)
+    R = _tabla_romberg(lambda x: np.exp(-(x ** 2)), -1.0, 1.0, 8)
     for i in range(8):
         poner(ws, f"A{r}", f"h/2^{i}", TEXTO)
         for j in range(8):
@@ -417,35 +420,34 @@ def hoja_metodologia(wb):
     lineas = [
         "",
         "1) SEPARABILIDAD DE LOS INTEGRANDOS",
-        "   Los tres integrandos son polinomios separables en x e y. Por eso la integral doble sobre",
-        "   el rectángulo [xa,xb]×[ya,yb] se reduce a productos y sumas de integrales 1D:",
+        "   Los tres integrandos son separables en x e y: f(x,y) = g(x)·h(y). Por eso la integral",
+        "   doble sobre el rectángulo [xa,xb]×[ya,yb] se reduce al PRODUCTO de dos integrales 1D:",
         "",
-        "     ∬ (1 − x² − y²) dx dy = (xb−xa)(yb−ya) − (yb−ya)·∫x²dx − (xb−xa)·∫y²dy",
+        "     ∬ (1−x²)(1−y²) dx dy = ∫(1−x²)dx · ∫(1−y²)dy",
         "     ∬ x² y²       dx dy = ∫x²dx · ∫y²dy",
-        "     ∬ (x² + y²)   dx dy = (yb−ya)·∫x²dx + (xb−xa)·∫y²dy",
+        "     ∬ e^(−(x²+y²)) dx dy = ∫e^(−x²)dx · ∫e^(−y²)dy",
         "",
         "2) INTEGRALES 1D NECESARIAS (calculadas con cada método en la hoja 'Metodos_1D')",
-        "     ∫ x² dx en [-1,1] = 2/3      ∫ x² dx en [1,2] = 7/3",
-        "     ∫ y² dy en [-1,1] = 2/3      ∫ y² dy en [1,3] = 26/3",
+        "     ∫ (1−x²) dx en [-1,1] = 4/3          ∫ x² dx en [0,2] = 8/3",
+        "     ∫ y² dy en [0,3] = 9                ∫ e^(−x²) dx en [-1,1] = √π·erf(1) ≈ 1.493648",
         "",
         "3) COMPROBACIÓN ANALÍTICA",
-        "     I1 = 4 − 2·(2/3) − 2·(2/3) = 4/3",
-        "     I2 = (7/3)·(26/3) = 182/9",
-        "     I3 = 2·(2/3) + 2·(2/3) = 8/3",
+        "     I1 = (4/3)·(4/3) = 16/9",
+        "     I2 = (8/3)·(9) = 24",
+        "     I3 = (√π·erf(1))² = π·erf(1)² ≈ 2.230985   (= valor de referencia del enunciado)",
         "",
-        "4) ¿POR QUÉ GAUSS-LEGENDRE ES CASI EXACTO AQUÍ?",
+        "4) ¿POR QUÉ GAUSS-LEGENDRE ES EXACTO EN I1 E I2 PERO NO EN I3?",
         "     Una cuadratura de Gauss-Legendre de n puntos integra EXACTAMENTE cualquier polinomio",
-        "     de grado ≤ 2n−1. Los integrandos son polinomios de grado bajo:",
-        "       · 1 − x² − y²  → grado 2  ⇒  n=2 (grado ≤3) ya es exacto",
-        "       · x² y²        → grado 4  ⇒  n=3 (grado ≤5) ya es exacto",
-        "       · x² + y²      → grado 2  ⇒  n=2 (grado ≤3) ya es exacto",
-        "     Por eso Gauss-Legendre da error ≈ 0 con muy pocos puntos, mientras que el trapecio",
-        "     necesita muchos subintervalos (su error es O(h²)).",
+        "     de grado ≤ 2n−1. En I1 e I2 los integrandos son polinomios de grado bajo (2 y 4),",
+        "     por lo que n=2 y n=3 ya son exactos. En I3 el integrando e^(−(x²+y²)) NO es un",
+        "     polinomio, así que Gauss-Legendre solo aproxima: con n=2,3,5 puntos da errores de",
+        "     1.77e-1, 1.51e-2 y 4.68e-5 respectivamente. Ahí Romberg (m=8) alcanza error ~1e-15,",
+        "     siendo el más eficiente.",
         "",
         "5) COMPARACIÓN DE EFICIENCIA (criterio: error absoluto)",
-        "     Ver la tabla de la hoja 'Resumen'. Se concluye que Gauss-Legendre y Romberg son los",
-        "     más eficientes (error ≈ 0 con pocos puntos), seguidos de Simpson y, por último,",
-        "     el trapecio.",
+        "     Ver la tabla de la hoja 'Resumen'. Para integrandos polinomiales, Gauss-Legendre y",
+        "     Romberg son los más eficientes; para la exponencial, Romberg supera a Gauss-Legendre",
+        "     de pocos puntos. El trapecio es siempre el menos preciso (error O(h²)).",
     ]
     r = 3
     for ln in lineas:

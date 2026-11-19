@@ -17,13 +17,12 @@ Software de resolución de integrales dobles (analítica y numérica) para el
 
 | # | Integral | Límites | Valor exacto |
 |---|----------|---------|--------------|
-| 1 | ∬ (1 − x² − y²) dx dy | −1 ≤ x ≤ 1, −1 ≤ y ≤ 1 | 4/3 |
-| 2 | ∬ x² y² dx dy | 1 ≤ x ≤ 2, 1 ≤ y ≤ 3 | 182/9 |
-| 3 | ∬ (x² + y²) dx dy | −1 ≤ x ≤ 1, −1 ≤ y ≤ 1 | 8/3 |
+| 1 | ∬ (1 − x²)(1 − y²) dx dy | −1 ≤ x ≤ 1, −1 ≤ y ≤ 1 | 16/9 |
+| 2 | ∬ x² y² dx dy | 0 ≤ x ≤ 2, 0 ≤ y ≤ 3 | 24 |
+| 3 | ∬ e^(−(x² + y²)) dx dy | −1 ≤ x ≤ 1, −1 ≤ y ≤ 1 | π·erf(1)² ≈ 2.230985 |
 
-> ⚠️ Los límites fueron interpretados de la imagen del enunciado; verifícalos
-> en tu PDF. El enunciado menciona además un valor de referencia "exacto" de
-> **2.230985** para el ejercicio de Gauss-Legendre de orden dos y tres.
+> ✅ El valor de referencia "exacto" **2.230985** del enunciado coincide con la
+> **Integral 3**: ∬ e^(−(x²+y²)) dx dy = (√π·erf(1))² = π·erf(1)² ≈ 2.230985.
 
 ---
 
@@ -131,15 +130,16 @@ tema_a/
   Gauss-Legendre es exacto para polinomios de bajo grado?).
 - Añadir **recomendaciones** y **referencias bibliográficas**.
 
-### ¿Por qué Gauss-Legendre es "exacto" en estos casos?
+### ¿Por qué Gauss-Legendre es "exacto" en I1 e I2 pero no en I3?
 
-Los tres integrandos son polinomios de grado bajo:
+Los dos primeros integrandos son polinomios de grado bajo:
 
-- `1 − x² − y²`: grado 2 en cada variable.
-- `x² y²`: grado 4.
-- `x² + y²`: grado 2.
+- `(1 − x²)(1 − y²)`: grado 2 en cada variable.
+- `x² y²`: grado 2 en cada variable.
 
 Una cuadratura de Gauss-Legendre de `n` puntos integra *exactamente* cualquier
-polinomio de grado ≤ `2n − 1`. Por eso, con 2 puntos (grado ≤ 3) la integral 1
-y 3 ya salen exactas, y con 3 puntos (grado ≤ 5) la integral 2 sale exacta.
-Este es un punto clave para justificar la **eficiencia** en las conclusiones.
+polinomio de grado ≤ `2n − 1`, por lo que con 2 puntos esas dos integrales ya
+salen exactas. En cambio `e^(−(x²+y²))` **no es un polinomio**, así que
+Gauss-Legendre solo aproxima (n=2 → error 1.8×10⁻¹; n=3 → 1.5×10⁻²; n=5 →
+4.7×10⁻⁵), y es Romberg (m=8) quien alcanza la precisión de máquina (~10⁻¹⁵).
+Este es el punto clave para comparar la **eficiencia** en las conclusiones.
