@@ -67,6 +67,8 @@ py generar_excel.py       # Genera Tema_A_Excel.xlsx (con fórmulas vivas)
 .
 ├── Proyecto Final de Análisis de Técnicas Numéricas.pdf   # enunciado
 ├── README.md                                              # este archivo
+├── informe/
+│   └── Informe_Tema_A.tex     # informe LaTeX listo para Overleaf
 └── tema_a/
     ├── interfaz.py         # GUI (Tkinter + Matplotlib)
     ├── main.py             # programa principal (consola)

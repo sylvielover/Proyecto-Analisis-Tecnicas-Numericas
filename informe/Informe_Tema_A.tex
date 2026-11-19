@@ -1,0 +1,434 @@
+% =====================================================================
+%  Proyecto Final — Tema A: Resolución de integrales dobles
+%  Análisis de Técnicas Numéricas — CECAR
+% ---------------------------------------------------------------------
+%  Archivo listo para compilar en Overleaf (compilador: pdfLaTeX).
+%  Sube a Overleaf las 7 imágenes de tema_a/graficas/ para que las
+%  gráficas se inserten solas. Si no las subes, se muestra un texto
+%  indicándolo y el documento igual compila.
+% =====================================================================
+\documentclass[12pt,a4paper]{article}
+
+% ------------------------------ Paquetes ------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla]{babel}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+% --------------------------- Rutas de imágenes -------------------------
+\graphicspath{{./}{graficas/}{../tema_a/graficas/}}
+
+% -------------------------------- Atajos -------------------------------
+\newcommand{\dd}{\,\mathrm{d}}
+
+% Figura robusta: si falta la imagen, compila igual mostrando un aviso.
+\newcommand{\fig}[4]{%
+  \begin{figure}[H]\centering
+    \IfFileExists{#2}%
+      {\includegraphics[width=#1\linewidth]{#2}}%
+      {\fbox{\parbox{0.72\linewidth}{\small\emph{Sube la imagen
+        \texttt{#2} a Overleaf (carpeta \texttt{graficas/}) para ver la
+        gráfica.}}}}
+    \caption{#3}\label{#4}
+  \end{figure}}
+
+% ------------------------------ Documento ------------------------------
+\title{\textbf{Resolución y análisis comparativo de integrales dobles}\\[4pt]
+       \large mediante métodos numéricos\\[6pt]
+       \normalsize Proyecto Final — Tema A}
+\author{Keiner Elías Beltrán Vergara}
+\date{\today}
+
+\begin{document}
+
+% ------------------------------ Portada --------------------------------
+\begin{titlepage}
+  \centering
+  {\scshape\large Corporación Universitaria del Caribe (CECAR)\par}
+  {\scshape Facultad de Ciencias Básicas, Ingeniería y Arquitectura\par}
+  \vfill
+  {\Huge\bfseries Análisis de Técnicas Numéricas\par}
+  \vspace{1cm}
+  {\LARGE Proyecto Final — Tema A\par}
+  \vspace{0.6cm}
+  {\large Resolución y comparación de métodos numéricos\par
+         para integrales dobles\par}
+  \vfill
+  \begin{tabular}[t]{l}
+    \textbf{Autor:} Keiner Elías Beltrán Vergara\\[4pt]
+    \textbf{Docente:} Ing. Carlos Cohen M.\\[4pt]
+    \textbf{Asignatura:} Análisis de Técnicas Numéricas\\[4pt]
+    \textbf{Fecha:} \today
+  \end{tabular}
+  \vfill
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ------------------------------ Resumen --------------------------------
+\section*{Resumen}
+\addcontentsline{toc}{section}{Resumen}
+En este proyecto se resuelven tres integrales dobles de forma
+\textbf{analítica} (integración iterada) y \textbf{numérica}, empleando los
+métodos vistos en clase: trapecio compuesto, Simpson 1/3, Simpson 3/8,
+integración de Romberg y cuadratura de Gauss--Legendre. Para cada método se
+calcula el \textbf{error absoluto} y \textbf{relativo} respecto del valor
+exacto, se generan gráficas comparativas y de convergencia, y se determina el
+método más eficiente. Los resultados se obtienen con cálculos manuales, con
+hoja de cálculo (Excel) y con un \textbf{software de propósito general}
+desarrollado en Python (consola e interfaz gráfica). Se concluye que
+Gauss--Legendre y Romberg alcanzan la solución exacta (error de redondeo de
+máquina) para los integrandos polinomiales propuestos, mientras que el
+trapecio converge con orden $O(h^2)$.
+
+% --------------------------- Introducción ------------------------------
+\section{Introducción}
+La integración numérica (o cuadratura) permite aproximar integrales definidas
+cuando no existe una primitiva cerrada o cuando el integrando solo se conoce
+en un conjunto discreto de puntos. En este trabajo se estudia el caso de
+\textbf{integrales dobles} sobre regiones rectangulares, que se reducen a dos
+integrales simples mediante \textbf{integración iterada}:
+\[
+  \iint_R f(x,y)\dd x\dd y
+  = \int_{y_a}^{y_b}\!\left[\int_{x_a}^{x_b} f(x,y)\dd x\right]\dd y .
+\]
+Se implementan cinco familias de métodos (con variantes) y se compara su
+eficiencia a partir del error absoluto cometido frente al valor analítico
+exacto.
+% ------------------------------ Objetivos ------------------------------
+\section{Objetivos}
+
+\subsection{Objetivo general}
+Resolver tres integrales dobles de forma analítica y numérica, empleando todos
+los métodos vistos en clase, y comparar la eficiencia de cada método con base
+en su error absoluto.
+
+\subsection{Objetivos específicos}
+\begin{itemize}[leftmargin=1.4em]
+  \item Calcular analíticamente (manualmente) el valor exacto de cada integral
+        mediante integración iterada.
+  \item Implementar los métodos de trapecio, Simpson 1/3, Simpson 3/8,
+        Romberg y Gauss--Legendre en un software de propósito general.
+  \item Reproducir los cálculos en una hoja de cálculo (Excel) con fórmulas
+        dinámicas.
+  \item Determinar el error absoluto y relativo de cada método y clasificarlos
+        según su eficiencia.
+  \item Analizar la convergencia de los métodos (orden de exactitud y
+        coeficiente de determinación $R^2$ del ajuste log--log).
+\end{itemize}
+
+% ---------------------------- Marco teórico -----------------------------
+\section{Marco teórico}
+Sea $I=\int_a^b f(x)\dd x$. En todos los métodos se particiona $[a,b]$ en $n$
+subintervalos de longitud $h=(b-a)/n$ y se aproxima la integral con una suma
+ponderada de valores de $f$.
+
+\subsection{Regla del trapecio compuesta}
+Aproxima $f$ por tramos rectos (polinomios de grado 1):
+\[
+  T_n = \frac{h}{2}\Big[f(x_0)+2\sum_{i=1}^{n-1}f(x_i)+f(x_n)\Big],
+  \qquad \text{error } O(h^2).
+\]
+Al duplicar $n$, el error se reduce aproximadamente a la cuarta parte.
+
+\subsection{Regla de Simpson 1/3 compuesta}
+Aproxima $f$ por parábolas (polinomios de grado 2) en pares de subintervalos
+($n$ par):
+\[
+  S_n = \frac{h}{3}\Big[f(x_0)+4\!\!\sum_{i\ \text{impar}}\!\!f(x_i)
+        +2\!\!\sum_{i\ \text{par}}\!\!f(x_i)+f(x_n)\Big],
+  \qquad \text{error } O(h^4).
+\]
+Integra exactamente polinomios de grado $\le 3$.
+
+\subsection{Regla de Simpson 3/8 compuesta}
+Aproxima $f$ por cúbicas en grupos de tres subintervalos ($n$ múltiplo de 3):
+\[
+  S_{3/8} = \frac{3h}{8}\big[f(x_0)+f(x_n)
+        +3\!\!\sum_{i\neq0,n,\ i\not\equiv 0 (3)}\!\!f(x_i)
+        +2\!\!\sum_{i\equiv 0 (3)}\!\!f(x_i)\big],
+  \qquad \text{error } O(h^4).
+\]
+
+\subsection{Integración de Romberg}
+Combina la regla del trapecio con la \textbf{extrapolación de Richardson} para
+eliminar términos de error sucesivos, obteniendo aproximaciones de orden
+creciente $O(h^{2m})$ con $m$ niveles. Su elemento final $R_{m,m}$ es la mejor
+aproximación de la tabla.
+
+\subsection{Cuadratura de Gauss--Legendre}
+Elige de forma óptima los nodos $x_i$ (raíces del polinomio de Legendre) y los
+pesos $w_i$ para maximizar la exactitud:
+\[
+  G_n = \frac{b-a}{2}\sum_{i=1}^{n} w_i\, f\!\left(\frac{a+b}{2}
+        +\frac{b-a}{2}x_i\right).
+\]
+Con $n$ puntos integra \textbf{exactamente} cualquier polinomio de grado
+$\le 2n-1$. Por ello es el método más eficiente para integrandos polinomiales.
+
+\subsection{Integrales dobles por integración iterada}
+Para $R=[x_a,x_b]\times[y_a,y_b]$ se aplica un método 1D en $x$ (integral
+interior) y el mismo método en $y$ (integral exterior):
+\[
+  \iint_R f(x,y)\dd x\dd y
+  = \int_{y_a}^{y_b} g(y)\dd y,\qquad
+  g(y)=\int_{x_a}^{x_b} f(x,y)\dd x .
+\]
+% ------------------------ Planteamiento del problema --------------------
+\section{Planteamiento del problema}
+Se pide resolver las siguientes tres integrales dobles de forma analítica y
+numérica:
+
+\begin{center}
+\begin{tabular}{c c c c}
+\toprule
+ & Integral & Región $R$ & Valor exacto \\
+\midrule
+1 & $\displaystyle\iint (1-x^2-y^2)\dd x\dd y$ & $[-1,1]\times[-1,1]$ & $4/3$ \\[4pt]
+2 & $\displaystyle\iint x^2 y^2\dd x\dd y$ & $[1,2]\times[1,3]$ & $182/9$ \\[4pt]
+3 & $\displaystyle\iint (x^2+y^2)\dd x\dd y$ & $[-1,1]\times[-1,1]$ & $8/3$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent\textit{Nota:} el enunciado también menciona un valor de referencia
+``exacto'' de $2.230985$ para un ejercicio de Gauss--Legendre; dicho valor no
+coincide con las tres integrales anteriores y debe verificarse visualmente en
+el PDF original.
+
+% --------------------------- Solución analítica -------------------------
+\section{Solución analítica (cálculo manual)}
+
+\subsection{Integral 1: $\iint (1-x^2-y^2)\dd x\dd y$ sobre $[-1,1]^2$}
+Integrando primero respecto de $x$:
+\[
+  \int_{-1}^{1}(1-x^2-y^2)\dd x
+  =\Big[x-\tfrac{x^3}{3}-y^2x\Big]_{-1}^{1}
+  =\Big(\tfrac{2}{3}-y^2\Big)-\Big(-\tfrac{2}{3}+y^2\Big)
+  =\frac{4}{3}-2y^2 .
+\]
+Integrando ahora respecto de $y$:
+\[
+  \int_{-1}^{1}\Big(\frac{4}{3}-2y^2\Big)\dd y
+  =\Big[\frac{4y}{3}-\frac{2y^3}{3}\Big]_{-1}^{1}
+  =\frac{2}{3}-\Big(-\frac{2}{3}\Big)
+  =\frac{4}{3}\approx 1.3333333333 .
+\]
+
+\subsection{Integral 2: $\iint x^2 y^2\dd x\dd y$ sobre $[1,2]\times[1,3]$}
+Por ser separable (producto de funciones de una variable):
+\[
+  \int_{1}^{3}\!\int_{1}^{2}x^2y^2\dd x\dd y
+  =\Big(\int_{1}^{2}x^2\dd x\Big)\Big(\int_{1}^{3}y^2\dd y\Big)
+  =\Big[\frac{x^3}{3}\Big]_{1}^{2}\Big[\frac{y^3}{3}\Big]_{1}^{3}
+  =\frac{7}{3}\cdot\frac{26}{3}
+  =\frac{182}{9}\approx 20.2222222222 .
+\]
+
+\subsection{Integral 3: $\iint (x^2+y^2)\dd x\dd y$ sobre $[-1,1]^2$}
+Integrando primero respecto de $x$:
+\[
+  \int_{-1}^{1}(x^2+y^2)\dd x
+  =\Big[\frac{x^3}{3}+y^2x\Big]_{-1}^{1}
+  =\Big(\frac{1}{3}+y^2\Big)-\Big(-\frac{1}{3}-y^2\Big)
+  =\frac{2}{3}+2y^2 .
+\]
+Integrando respecto de $y$:
+\[
+  \int_{-1}^{1}\Big(\frac{2}{3}+2y^2\Big)\dd y
+  =\Big[\frac{2y}{3}+\frac{2y^3}{3}\Big]_{-1}^{1}
+  =\frac{4}{3}-\Big(-\frac{4}{3}\Big)
+  =\frac{8}{3}\approx 2.6666666667 .
+\]
+% --------------------------- Solución numérica --------------------------
+\section{Solución numérica}
+Los cálculos se realizaron con el software de propósito general desarrollado en
+Python (módulo \texttt{metodos.py}), aplicando cada método 1D a la integral
+interior (en $x$) y a la exterior (en $y$). Los parámetros utilizados son:
+$n=100$ subintervalos para trapecio y Simpson 1/3, $n=99$ para Simpson 3/8
+(múltiplo de 3), $m=8$ niveles para Romberg y $n=2,3,5$ puntos para
+Gauss--Legendre. Los resultados se muestran a continuación.
+
+\subsection{Integral 1: $I_1=4/3\approx 1.3333333333$}
+\begin{center}
+\begin{tabular}{l c c c}
+\toprule
+Método & Resultado & Error absoluto & Error relativo \\
+\midrule
+Trapecio ($n=100$)       & $1.3328000000$ & $5.333\times10^{-4}$ & $4.000\times10^{-4}$ \\
+Simpson 1/3 ($n=100$)    & $1.3333333333$ & $2.220\times10^{-16}$ & $1.665\times10^{-16}$ \\
+Simpson 3/8 ($n=99$)     & $1.3333333333$ & $4.441\times10^{-16}$ & $3.331\times10^{-16}$ \\
+Romberg ($m=8$)          & $1.3333333333$ & $1.110\times10^{-15}$ & $8.327\times10^{-16}$ \\
+Gauss--Legendre (2 ptos) & $1.3333333333$ & $4.441\times10^{-16}$ & $3.331\times10^{-16}$ \\
+Gauss--Legendre (3 ptos) & $1.3333333333$ & $0$ & $0$ \\
+Gauss--Legendre (5 ptos) & $1.3333333333$ & $1.110\times10^{-15}$ & $8.327\times10^{-16}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\textbf{Método más eficiente:} Gauss--Legendre (3 puntos), error $=0$.
+
+\subsection{Integral 2: $I_2=182/9\approx 20.2222222222$}
+\begin{center}
+\begin{tabular}{l c c c}
+\toprule
+Método & Resultado & Error absoluto & Error relativo \\
+\midrule
+Trapecio ($n=100$)       & $20.2226777800$ & $4.556\times10^{-4}$ & $2.253\times10^{-5}$ \\
+Simpson 1/3 ($n=100$)    & $20.2222222222$ & $3.553\times10^{-15}$ & $1.757\times10^{-16}$ \\
+Simpson 3/8 ($n=99$)     & $20.2222222222$ & $1.066\times10^{-14}$ & $5.271\times10^{-16}$ \\
+Romberg ($m=8$)          & $20.2222222222$ & $0$ & $0$ \\
+Gauss--Legendre (2 ptos) & $20.2222222222$ & $0$ & $0$ \\
+Gauss--Legendre (3 ptos) & $20.2222222222$ & $3.553\times10^{-15}$ & $1.757\times10^{-16}$ \\
+Gauss--Legendre (5 ptos) & $20.2222222222$ & $0$ & $0$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\textbf{Método más eficiente:} Romberg ($m=8$), error $=0$ (junto con
+Gauss--Legendre de 2 y 5 puntos, que también dan error $0$).
+
+\subsection{Integral 3: $I_3=8/3\approx 2.6666666667$}
+\begin{center}
+\begin{tabular}{l c c c}
+\toprule
+Método & Resultado & Error absoluto & Error relativo \\
+\midrule
+Trapecio ($n=100$)       & $2.6672000000$ & $5.333\times10^{-4}$ & $2.000\times10^{-4}$ \\
+Simpson 1/3 ($n=100$)    & $2.6666666667$ & $8.882\times10^{-16}$ & $3.331\times10^{-16}$ \\
+Simpson 3/8 ($n=99$)     & $2.6666666667$ & $8.882\times10^{-16}$ & $3.331\times10^{-16}$ \\
+Romberg ($m=8$)          & $2.6666666667$ & $0$ & $0$ \\
+Gauss--Legendre (2 ptos) & $2.6666666667$ & $0$ & $0$ \\
+Gauss--Legendre (3 ptos) & $2.6666666667$ & $1.332\times10^{-15}$ & $4.996\times10^{-16}$ \\
+Gauss--Legendre (5 ptos) & $2.6666666667$ & $4.441\times10^{-16}$ & $1.665\times10^{-16}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\textbf{Método más eficiente:} Romberg ($m=8$), error $=0$ (junto con
+Gauss--Legendre de 2 puntos, que también da error $0$).
+% ---------------------- Comparación de eficiencia ----------------------
+\section{Comparación de eficiencia}
+La eficiencia se evalúa con el \textbf{error absoluto} $|I_{\text{num}}-I_{\text{exacto}}|$
+frente al número de evaluaciones del integrando. De las tablas anteriores se
+observa:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Trapecio} es el método menos preciso: su error es del orden de
+        $5\times10^{-4}$ con $n=100$ y converge con orden $O(h^2)$.
+  \item \textbf{Simpson 1/3 y 3/8} alcanzan la precisión de máquina
+        ($\sim10^{-15}$) porque los integrandos son polinomios de grado bajo y
+        ambos métodos son exactos para grado $\le 3$.
+  \item \textbf{Romberg} y \textbf{Gauss--Legendre} llegan al valor exacto con
+        error $0$ o del orden de la unidad de redondeo ($\sim10^{-16}$),
+        confirmando que son los métodos más eficientes para estos integrandos.
+\end{itemize}
+
+\subsection{Convergencia del trapecio y orden de exactitud}
+La siguiente tabla muestra el error absoluto del trapecio al aumentar el número
+de subintervalos $n$ en cada dirección:
+
+\begin{center}
+\begin{tabular}{c c c c}
+\toprule
+$n$ & Error ($I_1$) & Error ($I_2$) & Error ($I_3$) \\
+\midrule
+4   & $3.333\times10^{-1}$ & $2.856\times10^{-1}$ & $3.333\times10^{-1}$ \\
+8   & $8.333\times10^{-2}$ & $7.123\times10^{-2}$ & $8.333\times10^{-2}$ \\
+16  & $2.083\times10^{-2}$ & $1.780\times10^{-2}$ & $2.083\times10^{-2}$ \\
+32  & $5.208\times10^{-3}$ & $4.449\times10^{-3}$ & $5.208\times10^{-3}$ \\
+64  & $1.302\times10^{-3}$ & $1.112\times10^{-3}$ & $1.302\times10^{-3}$ \\
+128 & $3.255\times10^{-4}$ & $2.780\times10^{-4}$ & $3.255\times10^{-4}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Al duplicar $n$, el error se reduce a la cuarta parte (factor $\approx 4$), lo
+que confirma un orden de convergencia $p=2$. Ajustando $\log_{10}E$ contra
+$\log_{10}n$ mediante mínimos cuadrados se obtiene:
+\[
+  \text{pendiente } = -p = -2.001,\qquad R^2 = 1.0000 .
+\]
+El coeficiente de determinación $R^2\approx 1$ indica que los datos siguen
+perfectamente la ley $E\propto n^{-2}$.
+
+Para Simpson y Gauss--Legendre el error ya está en el nivel de la precisión de
+máquina ($\sim10^{-15}$) desde $n$ pequeño, por lo que no existe una tendencia
+polinomial que ajustar (el método ya es ``exacto'' a efectos prácticos).
+
+% ------------------------------- Gráficas -------------------------------
+\section{Gráficas generadas}
+Las gráficas fueron generadas automáticamente por el software
+(\texttt{graficas.py}) y guardadas en formato PNG.
+
+\fig{0.85}{barras_integral_1.png}{Error absoluto por método para la integral 1
+($1-x^2-y^2$).}{fig:barras1}
+\fig{0.85}{barras_integral_2.png}{Error absoluto por método para la integral 2
+($x^2y^2$).}{fig:barras2}
+\fig{0.85}{barras_integral_3.png}{Error absoluto por método para la integral 3
+($x^2+y^2$).}{fig:barras3}
+\fig{0.85}{convergencia_integral_1.png}{Convergencia (error vs.\ $n$) para la
+integral 1.}{fig:conv1}
+\fig{0.85}{convergencia_integral_2.png}{Convergencia (error vs.\ $n$) para la
+integral 2.}{fig:conv2}
+\fig{0.85}{convergencia_integral_3.png}{Convergencia (error vs.\ $n$) para la
+integral 3.}{fig:conv3}
+\fig{0.95}{comparacion_global.png}{Comparación global de errores por método e
+integral.}{fig:global}
+
+% -------------------------------- Excel ---------------------------------
+\section{Cálculos en Excel}
+Se elaboró una hoja de cálculo (\texttt{Tema\_A\_Excel.xlsx}) con cuatro hojas
+(\emph{Resumen}, \emph{Metodos\_1D}, \emph{Gauss\_Romberg} y
+\emph{Metodología}) que reproduce los cálculos anteriores mediante
+\textbf{fórmulas en vivo}, de modo que al abrirla los valores se recalculan y
+pueden verificarse. Las fórmulas implementan las mismas sumas ponderadas del
+marco teórico (trapecio, Simpson y Gauss--Legendre con nodos y pesos tabulados).
+
+% ----------------------------- Conclusiones -----------------------------
+\section{Conclusiones}
+\begin{itemize}[leftmargin=1.4em]
+  \item Todas las integrales pudieron resolverse analíticamente por integración
+        iterada, obteniendo $I_1=4/3$, $I_2=182/9$ e $I_3=8/3$.
+  \item Los métodos de orden superior (Simpson, Romberg y Gauss--Legendre)
+        reproducen el valor exacto con errores del orden de la precisión de
+        máquina ($10^{-15}$--$10^{-16}$), por lo que son los más eficientes.
+  \item El trapecio converge con orden $O(h^2)$, confirmado por el ajuste
+        log--log ($p\approx2$, $R^2=1$), siendo el método menos eficiente.
+  \item Gauss--Legendre con $n$ puntos integra exactamente polinomios de grado
+        $\le 2n-1$: por eso con 2--3 puntos basta para estos integrandos.
+\end{itemize}
+
+% --------------------------- Recomendaciones ----------------------------
+\section{Recomendaciones}
+\begin{itemize}[leftmargin=1.4em]
+  \item Para integrandos suaves y polinomiales, usar Gauss--Legendre o Romberg,
+        que requieren pocas evaluaciones y alcanzan alta exactitud.
+  \item Evitar el trapecio cuando se necesite alta precisión; en su lugar,
+        emplear Simpson (compuesta) o extrapolación de Romberg.
+  \item Verificar visualmente los límites de integración en el enunciado
+        original y, de ser necesario, actualizar el valor exacto en el código.
+\end{itemize}
+
+% ---------------------------- Referencias -------------------------------
+\begin{thebibliography}{9}
+\bibitem{burden} R.~L. Burden y J.~D. Faires, \emph{Análisis Numérico},
+9.ª ed., Cengage Learning, 2011.
+\bibitem{chapra} S.~C. Chapra y R.~P. Canale, \emph{Métodos Numéricos para
+Ingenieros}, 7.ª ed., McGraw-Hill, 2015.
+\bibitem{abramowitz} M.~Abramowitz e I.~A. Stegun, \emph{Handbook of
+Mathematical Functions}, Dover, 1972 (nodos y pesos de Gauss--Legendre).
+\end{thebibliography}
+
+\end{document}
+
+
+
+
